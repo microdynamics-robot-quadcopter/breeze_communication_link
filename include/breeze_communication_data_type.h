@@ -76,9 +76,9 @@ public:
     DataTypeHeight     robot_height_actual_;
     DataTypeThrust     motor_thrust_target_;
     DataTypeThrust     motor_thrust_actual_;
-    DataTypeSystemInfo robot_system_info_actual_;
     DataTypeSpacePose  robot_space_pose_target_;
     DataTypeSpacePose  robot_space_pose_actual_;
+    DataTypeSystemInfo robot_system_info_actual_;
 };
 
 #endif // BREEZE_COMMUNICATION_DATA_TYPE

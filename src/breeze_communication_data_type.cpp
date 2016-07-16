@@ -64,9 +64,6 @@ CommunicationDataType::CommunicationDataType(void)
     motor_thrust_target_.thrust = 0.0;
     motor_thrust_actual_.thrust = 0.0;
 
-    robot_system_info_actual_.battery_capacity = 0.0;
-    robot_system_info_actual_.link_quality     = 0.0;
-
     robot_space_pose_target_.coo.axis_x = 0.0;
     robot_space_pose_target_.coo.axis_y = 0.0;
     robot_space_pose_target_.coo.axis_z = 0.0;
@@ -80,4 +77,8 @@ CommunicationDataType::CommunicationDataType(void)
     robot_space_pose_actual_.att.att_r  = 0.0;
     robot_space_pose_actual_.att.att_p  = 0.0;
     robot_space_pose_actual_.att.att_y  = 0.0;
+
+
+    robot_system_info_actual_.battery_capacity = 0.0;
+    robot_system_info_actual_.link_quality     = 0.0;
 }
