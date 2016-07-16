@@ -1,0 +1,3 @@
+include_directories(../include)
+add_executable(breeze_communication_link breeze_communication_link.cpp breeze_communication_data_type.cpp)
+
