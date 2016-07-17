@@ -1,7 +1,57 @@
-#ifndef BREEZE_COMMUNICATION_LINK
-#define BREEZE_COMMUNICATION_LINK
+/***********************************************************************
+ *  Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2016, Team MicroDynamics
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *  * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above
+ *    copyright notice, this list of conditions and the following
+ *    disclaimer in the documentation and/or other materials provided
+ *    with the distribution.
+ *  * Neither the name of the Team MicroDynamics nor the names
+ *    of its contributors may be used to endorse or promote products
+ *    derived from this software without specific prior written
+ *    permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ ***********************************************************************
+
+ ***********************************************************************
+ *  History:
+ *  <Authors>        <Date>        <Operation>
+ *  myyerrol         2016.7.17     Create this file
+ *
+ *  Description:
+ *  This .h file defines some elements for creating communication link.
+ **********************************************************************/
+
+#ifndef BREEZE_COMMUNICATION_LINK_H
+#define BREEZE_COMMUNICATION_LINK_H
 
 #include "breeze_communication_data_type.h"
+
+#define LINK_MODE 1
+
+#if !LINK_MODE
+#include "breeze_communication_link_port.h"
+#endif
 
 #define MESSAGE_BUFFER_SIZE 100
 #define TRUE                1
@@ -61,10 +111,10 @@ typedef enum CommunicationCommandState {
 } CommunicationCommandState;
 
 typedef struct CommunicationMessage {
-    unsigned char      sender_id;
-    unsigned char      receiver_id;
-    unsigned short int length;
-    unsigned char      data[MESSAGE_BUFFER_SIZE];
+    unsigned char  sender_id;
+    unsigned char  receiver_id;
+    unsigned short length;
+    unsigned char  data[MESSAGE_BUFFER_SIZE];
 } CommunicationMessage;
 
 class CommunicationLink
@@ -72,11 +122,11 @@ class CommunicationLink
 public:
     CommunicationLink(unsigned char owner_id = 0x11,
                       unsigned char other_id = 0x01,
-                      CommunicationDataType *comm_data_type = 0);
+                      CommunicationDataType *data_type = 0);
     unsigned char sendCommandFromMaster(CommunicationCommandState command_state);
     unsigned char getReceiveState(CommunicationCommandState command_state);
     unsigned char *getSerializeData(void);
-    unsigned short int getSerializedLength(void);
+    unsigned short getSerializedLength(void);
     unsigned char analyseReceiveByte(unsigned char recv_byte);
     void setOwnerID(unsigned char owner_id);
     void setOtherID(unsigned char other_id);
@@ -86,15 +136,15 @@ public:
 private:
     unsigned char analyseReceiveStates(unsigned char recv_data);
     unsigned char analyseReceivePackage(void);
-    unsigned char analyseReadCommand(CommunicationCommandState comm_command_state,
-                                     unsigned char *comm_data_type,
-                                     unsigned short int comm_data_type_length);
-    unsigned char analyseWriteCommand(CommunicationCommandState comm_command_state,
-                                      unsigned char *comm_data_type,
-                                      unsigned short int comm_data_type_length);
+    unsigned char analyseReadCommand(CommunicationCommandState command_state,
+                                     unsigned char *data_type,
+                                     unsigned short data_type_length);
+    unsigned char analyseWriteCommand(CommunicationCommandState command_state,
+                                      unsigned char *data_type,
+                                      unsigned short data_type_length);
     void sendData(CommunicationCommandState command_state,
-                  unsigned char *comm_data_type,
-                  unsigned short int comm_data_type_length);
+                  unsigned char *data_type,
+                  unsigned short data_type_length);
     void sendMessage(void);
 private:
     unsigned char              shake_hands_state_;
@@ -103,20 +153,20 @@ private:
     unsigned char              owner_id_;
     unsigned char              other_id_;
     unsigned char              link_ack_en_;
-    CommunicationDataType     *comm_data_type_;
-    CommunicationReceiveState  comm_receive_state_;
-    CommunicationCommandState  comm_command_state_;
-    CommunicationMode          comm_mode_;
-    CommunicationMessage       comm_message_recv_;
-    CommunicationMessage       comm_message_send_;
+    unsigned char              send_buffer_[MESSAGE_BUFFER_SIZE + 20];
+    unsigned short             send_buffer_length_;
+    unsigned short             recv_checksum_;
+    unsigned short             recv_message_length_;
+    unsigned short             recv_byte_count_;
     float                      recv_package_count_;
     float                      send_package_count_;
     float                      package_update_freq_;
-    unsigned char              send_buffer_[MESSAGE_BUFFER_SIZE + 20];
-    unsigned short int         send_buffer_length_;
-    unsigned short int         recv_checksum_;
-    unsigned short int         recv_message_length_;
-    unsigned short int         recv_byte_count_;
+    CommunicationDataType     *data_type_;
+    CommunicationReceiveState  receive_state_;
+    CommunicationCommandState  command_state_;
+    CommunicationMode          link_mode_;
+    CommunicationMessage       recv_message_;
+    CommunicationMessage       send_message_;
 };
 
-#endif // BREEZE_COMMUNICATION_LINK
+#endif // BREEZE_COMMUNICATION_LINK_H
