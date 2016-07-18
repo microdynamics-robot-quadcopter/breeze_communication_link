@@ -42,15 +42,15 @@
  *  This .h file defines some elements for creating communication link.
  **********************************************************************/
 
-#ifndef BREEZE_COMMUNICATION_LINK_H
-#define BREEZE_COMMUNICATION_LINK_H
+#ifndef COMMUNICATION_LINK_H
+#define COMMUNICATION_LINK_H
 
-#include "breeze_communication_data_type.h"
+#include "communication_data_type.h"
 
 #define LINK_MODE 1
 
 #if !LINK_MODE
-#include "breeze_communication_link_port.h"
+#include "communication_link_port.h"
 #endif
 
 #define MESSAGE_BUFFER_SIZE 100
@@ -169,4 +169,4 @@ private:
     CommunicationMessage       send_message_;
 };
 
-#endif // BREEZE_COMMUNICATION_LINK_H
+#endif // COMMUNICATION_LINK_H

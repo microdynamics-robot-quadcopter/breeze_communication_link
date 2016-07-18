@@ -42,7 +42,7 @@
  *  This .cpp file create and initialize data types.
  **********************************************************************/
 
-#include <breeze_communication_data_type.h>
+#include <communication_data_type.h>
 
 CommunicationDataType::CommunicationDataType(void)
 {

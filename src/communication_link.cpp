@@ -44,7 +44,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <breeze_communication_link.h>
+#include <communication_link.h>
 
 CommunicationLink::CommunicationLink(unsigned char owner_id,
                                      unsigned char other_id,

@@ -42,8 +42,8 @@
  *  This .h file defines some data types for communication.
  **********************************************************************/
 
-#ifndef BREEZE_COMMUNICATION_DATA_TYPE_H
-#define BREEZE_COMMUNICATION_DATA_TYPE_H
+#ifndef COMMUNICATION_DATA_TYPE_H
+#define COMMUNICATION_DATA_TYPE_H
 
 typedef struct DataTypeAcceleration {
     float acc_x;
@@ -125,4 +125,4 @@ public:
     DataTypeSystemInfo robot_system_info_actual_;
 };
 
-#endif // BREEZE_COMMUNICATION_DATA_TYPE_H
+#endif // COMMUNICATION_DATA_TYPE_H
