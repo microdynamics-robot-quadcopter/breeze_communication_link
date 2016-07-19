@@ -47,7 +47,8 @@
 
 #include "communication_data_type.h"
 
-#define LINK_MODE 1
+#define LINK_MODE         1
+#define COMMUNICATION_LIB 1
 
 #if !LINK_MODE
 #include "communication_link_port.h"
@@ -123,17 +124,21 @@ public:
     CommunicationLink(unsigned char owner_id = 0x11,
                       unsigned char other_id = 0x01,
                       CommunicationDataType *data_type = 0);
-    unsigned char sendCommandFromMaster(CommunicationCommandState command_state);
-    unsigned char getReceiveState(CommunicationCommandState command_state);
-    unsigned char *getSerializeData(void);
-    unsigned short getSerializedLength(void);
-    unsigned char analyseReceiveByte(unsigned char recv_byte);
     void setOwnerID(unsigned char owner_id);
     void setOtherID(unsigned char other_id);
     void setPortNum(unsigned char port_num);
     void enableAck(void);
     void disableAck(void);
+    unsigned char sendCommandFromMaster(CommunicationCommandState command_state);
+    unsigned char analyseReceiveByte(unsigned char recv_byte);
+    unsigned char getReceiveState(CommunicationCommandState command_state);
+    unsigned char *getSerializeData(void);
+    unsigned short getSerializedLength(void);
 private:
+    void sendData(CommunicationCommandState command_state,
+                  unsigned char *data_type,
+                  unsigned short data_type_length);
+    void sendMessage(void);
     unsigned char analyseReceiveStates(unsigned char recv_data);
     unsigned char analyseReceivePackage(void);
     unsigned char analyseReadCommand(CommunicationCommandState command_state,
@@ -142,10 +147,6 @@ private:
     unsigned char analyseWriteCommand(CommunicationCommandState command_state,
                                       unsigned char *data_type,
                                       unsigned short data_type_length);
-    void sendData(CommunicationCommandState command_state,
-                  unsigned char *data_type,
-                  unsigned short data_type_length);
-    void sendMessage(void);
 private:
     unsigned char              shake_hands_state_;
     unsigned char              recv_package_state_[LAST_COMMAND];

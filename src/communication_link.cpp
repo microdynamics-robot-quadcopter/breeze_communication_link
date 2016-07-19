@@ -77,6 +77,33 @@ CommunicationLink::CommunicationLink(unsigned char owner_id,
     send_buffer_length_       = 0;
 }
 
+void CommunicationLink::setOwnerID(unsigned char owner_id)
+{
+    owner_id_ = owner_id;
+}
+
+void CommunicationLink::setOtherID(unsigned char other_id)
+{
+    other_id_ = other_id;
+}
+
+void CommunicationLink::setPortNum(unsigned char port_num)
+{
+    port_num_ = port_num;
+}
+
+void CommunicationLink::enableAck(void)
+{
+    if (!link_ack_en_) {
+        link_ack_en_ = TRUE;
+    }
+}
+
+void CommunicationLink::disableAck(void)
+{
+    link_ack_en_ = FALSE;
+}
+
 unsigned char CommunicationLink::sendCommandFromMaster(
     CommunicationCommandState command_state)
 {
@@ -172,6 +199,76 @@ unsigned char CommunicationLink::analyseReceiveByte(unsigned char recv_byte)
     }
 
     return FALSE;
+}
+
+unsigned char CommunicationLink::getReceiveState(
+    CommunicationCommandState command_state)
+{
+    return recv_package_state_[command_state];
+}
+
+unsigned char *CommunicationLink::getSerializeData(void)
+{
+    return send_buffer_;
+}
+
+unsigned short CommunicationLink::getSerializedLength(void)
+{
+    return send_buffer_length_;
+}
+
+void CommunicationLink::sendData(CommunicationCommandState command_state,
+                                 unsigned char *data_type,
+                                 unsigned short data_type_length)
+{
+    send_message_.sender_id   = owner_id_;
+    send_message_.receiver_id = other_id_;
+    send_message_.length      = data_type_length + 1;
+    send_message_.data[0]     = (unsigned char)command_state;
+
+    // Fill specific data to send write command.
+    if (data_type_length > 0) {
+        memcpy(&send_message_.data[1], data_type, data_type_length);
+    }
+    // Fill empty data to send read command.
+    else if (data_type_length == 0) {
+    }
+
+    sendMessage();
+}
+
+void CommunicationLink::sendMessage(void)
+{
+    unsigned short i;
+    unsigned short checksum = 0;
+
+    send_buffer_[0] = 0xff;
+    checksum += 0xff;
+
+    send_buffer_[1] = 0xff;
+    checksum += 0xff;
+
+    send_buffer_[2] = send_message_.sender_id;
+    checksum += send_buffer_[2];
+
+    send_buffer_[3] = send_message_.receiver_id;
+    checksum += send_buffer_[3];
+
+    send_buffer_[4] = (unsigned char)(send_message_.length >> 8);
+    checksum += send_buffer_[4];
+
+    send_buffer_[5] = (unsigned char)(send_message_.length);
+    checksum += send_buffer_[5];
+
+    for (i = 0; i < send_message_.length; i++) {
+        send_buffer_[6 + i] = send_message_.data[i];
+        checksum += send_buffer_[6 + i];
+    }
+
+    checksum = checksum % 255;
+    send_buffer_[6 + i] = checksum;
+    send_buffer_length_ = 7 + i;
+    send_package_count_++;
 }
 
 unsigned char CommunicationLink::analyseReceiveStates(unsigned char recv_data)
@@ -271,6 +368,7 @@ unsigned char CommunicationLink::analyseReceivePackage(void)
 
     command_state_ = (CommunicationCommandState)recv_message_.data[0];
 
+    // The slave need to check the state of SHAKE_HANDS.
     if (link_mode_ == MODE_SLAVE) {
         if (!shake_hands_state_ && command_state_ != SHAKE_HANDS) {
             sendData(SHAKE_HANDS, (unsigned char *)single_command, 0);
@@ -418,6 +516,7 @@ unsigned char CommunicationLink::analyseReceivePackage(void)
         }
     }
 
+    // Clear the parameters.
     recv_message_.sender_id   = 0;
     recv_message_.receiver_id = 0;
     recv_message_.length      = 0;
@@ -431,6 +530,7 @@ unsigned char CommunicationLink::analyseReadCommand(
     unsigned char *data_type,
     unsigned short data_type_length)
 {
+    // The slave feedback a package to master, and master save package.
     if (link_mode_ == MODE_MASTER) {
         if ((recv_message_.length - 1) != data_type_length) {
             printf("Error, the master can not read message from slave!");
@@ -440,6 +540,8 @@ unsigned char CommunicationLink::analyseReadCommand(
                data_type_length);
         recv_package_state_[(unsigned char)command_state] = TRUE;
     }
+    // The master publish a read command to slave, and the slave feedback some
+    // informations to master.
     else if (link_mode_ == MODE_SLAVE) {
         sendData(command_state, data_type, data_type_length);
         recv_package_state_[(unsigned char)command_state] = TRUE;
@@ -455,6 +557,7 @@ unsigned char CommunicationLink::analyseWriteCommand(
 {
     unsigned char *ack;
 
+    // The master receive the slave's ack.
     if (link_mode_ = MODE_MASTER) {
         if (command_state == SHAKE_HANDS) {
             shake_hands_state_ = TRUE;
@@ -465,18 +568,20 @@ unsigned char CommunicationLink::analyseWriteCommand(
         }
         recv_package_state_[(unsigned char)command_state] = TRUE;
     }
+    // The master publish a write command to slave, the slave save this package
+    // and feedback ack to master.
     else if (link_mode_ = MODE_SLAVE) {
         if ((recv_message_.length - 1) != data_type_length) {
             printf("Error, the slave can not read message from master!\n");
             return FALSE;
         }
-        memcpy(data_type, &recv_message_.data[1],
-                data_type_length);
+        memcpy(data_type, &recv_message_.data[1], data_type_length);
         if (command_state == SHAKE_HANDS) {
             shake_hands_state_ = TRUE;
         }
         else {
-            sendData(command_state, (unsigned char *)ack, 0);
+            // The slave receive master's write package.
+            sendData(command_state, ack, 0);
         }
         recv_package_state_[(unsigned char)command_state] = TRUE;
     }
@@ -484,101 +589,9 @@ unsigned char CommunicationLink::analyseWriteCommand(
     return TRUE;
 }
 
-void CommunicationLink::sendData(CommunicationCommandState command_state,
-                                 unsigned char *data_type,
-                                 unsigned short data_type_length)
-{
-    send_message_.sender_id   = owner_id_;
-    send_message_.receiver_id = other_id_;
-    send_message_.length      = data_type_length + 1;
-    send_message_.data[0]     = (unsigned char)command_state;
-
-    if (data_type_length > 0) {
-        memcpy(&send_message_.data[1], data_type,
-                data_type_length);
-    }
-
-    sendMessage();
-}
-
-void CommunicationLink::sendMessage(void)
-{
-    unsigned short int i;
-    unsigned short int checksum = 0;
-
-    send_buffer_[0] = 0xff;
-    checksum += 0xff;
-
-    send_buffer_[1] = 0xff;
-    checksum += 0xff;
-
-    send_buffer_[2] = send_message_.sender_id;
-    checksum += send_buffer_[2];
-
-    send_buffer_[3] = send_message_.receiver_id;
-    checksum += send_buffer_[3];
-
-    send_buffer_[4] = (unsigned char)(send_message_.length >> 8);
-    checksum += send_buffer_[4];
-
-    send_buffer_[5] = (unsigned char)(send_message_.length);
-    checksum += send_buffer_[5];
-
-    for (i = 0; i < send_message_.length; i++) {
-        send_buffer_[6 + i] = send_message_.data[i];
-        checksum += send_buffer_[6 + i];
-    }
-
-    checksum = checksum % 255;
-    send_buffer_[6 + i] = checksum;
-    send_buffer_length_ = 7 + i;
-    send_package_count_++;
-}
-
-unsigned char CommunicationLink::getReceiveState(
-    CommunicationCommandState command_state)
-{
-    return recv_package_state_[command_state];
-}
-
-unsigned char *CommunicationLink::getSerializeData(void)
-{
-    return send_buffer_;
-}
-
-unsigned short CommunicationLink::getSerializedLength(void)
-{
-    return send_buffer_length_;
-}
-
-void CommunicationLink::setOwnerID(unsigned char owner_id)
-{
-    owner_id_ = owner_id;
-}
-
-void CommunicationLink::setOtherID(unsigned char other_id)
-{
-    other_id_ = other_id;
-}
-
-void CommunicationLink::setPortNum(unsigned char port_num)
-{
-    port_num_ = port_num;
-}
-
-void CommunicationLink::enableAck(void)
-{
-    if (!link_ack_en_) {
-        link_ack_en_ = TRUE;
-    }
-}
-
-void CommunicationLink::disableAck(void)
-{
-    link_ack_en_ = FALSE;
-}
-
+#if COMMUNICATION_LIB
 int main(void)
 {
     return 0;
 }
+#endif
