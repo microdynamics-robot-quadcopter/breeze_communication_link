@@ -47,8 +47,8 @@
 
 #include "communication_data_type.h"
 
-#define LINK_MODE         1
-#define COMMUNICATION_LIB 0
+#define LINK_MODE              1
+#define COMMUNICATION_LINK_LIB 0
 
 #if !LINK_MODE
 #include "communication_link_port.h"

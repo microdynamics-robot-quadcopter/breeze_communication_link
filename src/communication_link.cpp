@@ -589,7 +589,7 @@ unsigned char CommunicationLink::analyseWriteCommand(
     return TRUE;
 }
 
-#if !COMMUNICATION_LIB
+#if !COMMUNICATION_LINK_LIB
 int main(void)
 {
     return 0;
